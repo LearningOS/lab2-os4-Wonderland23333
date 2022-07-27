@@ -273,3 +273,15 @@ pub fn exit_current_and_run_next() {
 pub fn set_task_info(ti: *mut TaskInfo){
     TASK_MANAGER.set_current_task_info(ti);
 }
+
+pub fn drop_munmap(start: usize, len: usize) -> isize{
+    TASK_MANAGER.drop_munmap(start,len)
+}
+
+pub fn call_mmap(&self,start: usize, len: usize, port: usize) -> isize{
+    TASK_MANAGER.call_mmap(start,len,prot)
+}
+
+pub fn update_syscall_times(syscall_id: usize) {
+    TASK_MANAGER.update_syscall_times(syscall_id);
+}

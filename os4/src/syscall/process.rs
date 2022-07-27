@@ -46,7 +46,7 @@ pub fn sys_get_time(_ts: *mut TimeVal, _tz: usize) -> isize {
      }
     0
     } else {
-    ()
+    -1
     }
 }
 pub fn get_phy_addr(vaddr: VirtAddr)->Option<PhysAddr>{
