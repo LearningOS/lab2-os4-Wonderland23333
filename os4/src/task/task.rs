@@ -1,6 +1,6 @@
 //! Types related to task management
 use super::TaskContext;
-use crate::config::{kernel_stack_position, TRAP_CONTEXT,MAX_SYSCALL_NUM};
+use crate::config::{kernel_stack_position, MAX_SYSCALL_NUM, TRAP_CONTEXT};
 use crate::mm::{MapPermission, MemorySet, PhysPageNum, VirtAddr, KERNEL_SPACE};
 use crate::trap::{trap_handler, TrapContext};
 
@@ -11,6 +11,7 @@ pub struct TaskInfoInner {
 }
 
 /// task control block structure
+
 pub struct TaskControlBlock {
     pub task_status: TaskStatus,
     pub task_cx: TaskContext,
