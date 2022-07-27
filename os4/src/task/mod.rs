@@ -156,6 +156,18 @@ impl TaskManager {
     }
 }
 
+fn get_syscall_times(&self) -> [u32; 500] {
+    let inner = self.inner.exclusive_access();
+    let current = inner.current_task;
+    inner.tasks[current].syscall_times
+}
+
+fn get_start_time(&self) -> usize {
+    let inner = self.inner.exclusive_access();
+    let current = inner.current_task;
+    return timer::get_time_us() - inner.tasks[current].start_time;
+}
+
 fn update_syscall_times(&self, syscall_id: usize) {
     let mut inner = self.inner.exclusive_access();
     let index = inner.current_task;
@@ -179,7 +191,7 @@ fn call_mmap(&self,start: usize, len: usize, port: usize) -> isize{
     let v1 = VirtpageNum::from(VirtAddr(start));
     let v2 = VirtpageNum::from(VirtAddr(start + len).ceil());
 
-    for i in v1..v2{
+    for i in v1.0..v2.0{
         let Some(m) = memory_set.translate(VirtPageNum(i));
         if !m.is_valid() {
             return -1;
@@ -191,6 +203,10 @@ fn call_mmap(&self,start: usize, len: usize, port: usize) -> isize{
 }
 
 fn drop_munmap(&self,start: usize, len: usize) -> isize{
+    if start % config::PAGE_SIZE != 0 {
+        return -1;
+    }
+
     let mut inner = self.inner.exclusive_access();
     let task_id = inner.current_task;
     let current_taskb = &mut inner.tasks[task_id];
@@ -199,7 +215,15 @@ fn drop_munmap(&self,start: usize, len: usize) -> isize{
     let v1 = VirtpageNum::from(VirtAddr(start));
     let v2 = VirtpageNum::from(VirtAddr(start + len).ceil());
 
-    for i in v1..v2{
+    for x in v1.0 .. v2.0 {
+        if let Some(m) = memory_set.translate(VirtPageNum(x)) {
+            if !m.is_valid() {
+                println!("vpn {} is not valid before unmap", x);
+                return -1;
+            }
+        }
+    }
+    for i in v1.0..v2.0{
         let Some(m) = memory_set.translate(VirtPageNum(i));
         if !m.is_valid() {
             return -1;
