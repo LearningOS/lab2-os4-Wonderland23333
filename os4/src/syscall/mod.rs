@@ -23,7 +23,8 @@ mod fs;
 mod process;
 
 use fs::*;
-use process::*;
+pub use process::*;
+use crate::task::update_syscall_times;
 
 /// handle syscall exception with `syscall_id` and other arguments
 pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {

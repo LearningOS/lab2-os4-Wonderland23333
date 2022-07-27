@@ -1,8 +1,9 @@
 //! Process management syscalls
 
+use crate::config::{MAX_SYSCALL_NUM, PAGE_SIZE};
 use crate::mm::{frame_alloc, PTEFlags, PageTable, PhysAddr, VirtAddr, VirtPageNum};
-use crate::config::MAX_SYSCALL_NUM;
-use crate::task::{exit_current_and_run_next, suspend_current_and_run_next,current_user_token, TaskStatus,call_mmap,drop_munmap};
+
+use crate::task::{current_user_token, exit_current_and_run_next, set_task_info, suspend_current_and_run_next,TaskStatus, call_mmap,drop_munmap};
 use crate::timer::get_time_us;
 
 #[repr(C)]
@@ -12,7 +13,7 @@ pub struct TimeVal {
     pub usec: usize,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct TaskInfo {
     pub status: TaskStatus,
     pub syscall_times: [u32; MAX_SYSCALL_NUM],
@@ -32,11 +33,11 @@ pub fn sys_yield() -> isize {
 }
 
 // YOUR JOB: 引入虚地址后重写 sys_get_time
-pub fn sys_get_time(_ts: *mut TimeVal, _tz: usize) -> isize {
+pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize {
     
     let vaddr = VirtAddr(ts as usize);
     if let Some(x) = get_phy_addr(vaddr) {
-        let _us = get_time_us();
+        let us = get_time_us();
         let nwts = x.0 as *mut TimeVal;
      unsafe {
          *nwts = TimeVal {
@@ -49,12 +50,13 @@ pub fn sys_get_time(_ts: *mut TimeVal, _tz: usize) -> isize {
     -1
     }
 }
+
 pub fn get_phy_addr(vaddr: VirtAddr)->Option<PhysAddr>{
     let ofs = vaddr.page_offset();
     let vpn = vaddr.floor();
     let ppn = PageTable::from_token(current_user_token()).translate(vpn).map(|pgentry| pgentry.ppn());
     if let Some(ppn) = ppn {
-        Some(PhysAddr::comnine(ppn,offset))
+        Some(PhysAddr::combine(ppn,ofs))
     } else {
         None
     }
@@ -66,16 +68,20 @@ pub fn sys_set_priority(_prio: isize) -> isize {
 }
 
 // YOUR JOB: 扩展内核以实现 sys_mmap 和 sys_munmap
-pub fn sys_mmap(_start: usize, _len: usize, _port: usize) -> isize {
-    call_mmap(&self,_start,_len,_port)
+pub fn sys_mmap(start: usize, len: usize, port: usize) -> isize {
+    call_mmap(start,len,port)
 }
 
-pub fn sys_munmap(_start: usize, _len: usize) -> isize {
-    drop_munmap(&self,_start, _len)
+pub fn sys_munmap(start: usize, len: usize) -> isize {
+    drop_munmap(start, len)
 }
 
 // YOUR JOB: 引入虚地址后重写 sys_task_info
 pub fn sys_task_info(ti: *mut TaskInfo) -> isize {
-    set_task_info(ti);
-    0
+    if let Some(x) = get_phy_addr(VirtAddr(ti as usize)) {
+        set_task_info(x.0 as *mut TaskInfo);
+        0
+    } else {
+        -1
+    }
 }
