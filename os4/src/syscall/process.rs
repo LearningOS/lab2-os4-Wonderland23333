@@ -1,7 +1,7 @@
 //! Process management syscalls
 
-use crate::config::{MAX_SYSCALL_NUM, PAGE_SIZE};
-use crate::mm::{frame_alloc, PTEFlags, PageTable, PhysAddr, VirtAddr, VirtPageNum};
+use crate::config::{MAX_SYSCALL_NUM};
+use crate::mm::{PageTable, PhysAddr, VirtAddr};
 
 use crate::task::{current_user_token, exit_current_and_run_next, set_task_info, suspend_current_and_run_next,TaskStatus, call_mmap,drop_munmap};
 use crate::timer::get_time_us;
