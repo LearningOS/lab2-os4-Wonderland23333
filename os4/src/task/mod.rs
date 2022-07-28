@@ -178,15 +178,10 @@ fn update_syscall_time(&self, syscall_id: usize) {
 
 fn call_map(&self, start: usize, len: usize, port: usize) -> isize {
     if start & (PAGE_SIZE - 1) != 0 {
-        println!(
-            "expect the start address to be aligned with a page, but get an invalid start: {:#x}",
-            start
-        );
         return -1;
     }
 
     if port == 0 || port > 7usize  {
-        println!("invalid port: {:#b}", port);
         return -1;
     }
 
@@ -201,7 +196,6 @@ fn call_map(&self, start: usize, len: usize, port: usize) -> isize {
     for vpn in  v1.0 .. v2.0 {
         if let Some(m) = memory_set.translate(VirtPageNum(vpn)) {
             if m.is_valid() {
-                println!("vpn {} has been occupied!", vpn);
                 return -1;
             }
         }
