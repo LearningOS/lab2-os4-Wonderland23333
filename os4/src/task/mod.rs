@@ -176,35 +176,35 @@ fn update_syscall_time(&self, syscall_id: usize) {
     inner.tasks[current_id].task_info_inner.syscall_times[syscall_id] += 1;
 }
 
-fn call_map(&self, start: usize, len: usize, port: usize) -> isize{
-    if start & (PAGE_SIZE - 1) != 0{
+fn call_map(&self, start: usize, len: usize, port: usize) -> isize {
+    if start & (PAGE_SIZE - 1) != 0 {
         return -1;
     }
-
-    if port <= 0 || port > 7usize {
-            return -1;
+    if port <= 0 || port > 7usize   {
+        return -1;
     }
 
     let mut inner = self.inner.exclusive_access();
     let task_id = inner.current_task;
-    let current_taskb = &mut inner.tasks[task_id];
-    let memory_set = &mut current_taskb.memory_set;
+    let current_task = &mut inner.tasks[task_id];
+    let memory_set = &mut current_task.memory_set;
 
     let v1 = VirtPageNum::from(VirtAddr(start));
     let v2 = VirtPageNum::from(VirtAddr(start + len).ceil());
 
-    for i in v1.0..v2.0{
-       if let Some(m) = memory_set.translate(VirtPageNum(i)){
-        if !m.is_valid() {
-            return -1;
+    for i in v1.0 ..v2.0 {
+        if let Some(m) = memory_set.translate(VirtPageNum(i)) {
+            if m.is_valid() {
+                return -1;
+            }
         }
-       }
     }
-    let permission = MapPermission::from_bits((port as u8) << 1).unwrap() | MapPermission::U;
-        memory_set.insert_framed_area(VirtAddr(start), VirtAddr(start+len), permission);
-        0
-}
 
+    let permission = MapPermission::from_bits((port as u8) << 1).unwrap() | MapPermission::U;
+    memory_set.insert_framed_area(VirtAddr(start), VirtAddr(start+len), permission);
+    0
+}
+         
 fn drop_mmunmap(&self,start: usize, len: usize) -> isize{
     if start % (PAGE_SIZE - 1) != 0 {
         return -1;
@@ -219,8 +219,8 @@ fn drop_mmunmap(&self,start: usize, len: usize) -> isize{
     let v2 = VirtPageNum::from(VirtAddr(start + len).ceil());
 
     for x in v1.0 .. v2.0 {
-        if let Some(m) = memory_set.translate(VirtPageNum(x)) {
-            if !m.is_valid() {
+        if let Some(pte) = memory_set.translate(VirtPageNum(x)) {
+            if !pte.is_valid() {
                 return -1;
             }
         }
