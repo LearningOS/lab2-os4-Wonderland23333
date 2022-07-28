@@ -199,8 +199,8 @@ fn call_map(&self, start: usize, len: usize, port: usize) -> isize {
     let v2 = VirtPageNum::from(VirtAddr(start + len).ceil());
 
     for vpn in  v1.0 .. v2.0 {
-        if let Some(pte) = memory_set.translate(VirtPageNum(vpn)) {
-            if pte.is_valid() {
+        if let Some(m) = memory_set.translate(VirtPageNum(vpn)) {
+            if m.is_valid() {
                 println!("vpn {} has been occupied!", vpn);
                 return -1;
             }
