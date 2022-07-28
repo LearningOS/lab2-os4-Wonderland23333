@@ -208,26 +208,26 @@ fn call_map(&self, start: usize, len: usize, port: usize) -> isize {
 }
          
 fn drop_mmunmap(&self,start: usize, len: usize) -> isize{
-    if start % (PAGE_SIZE - 1) != 0 {
+    if start & (PAGE_SIZE - 1) != 0 {
         return -1;
     }
-
+    
     let mut inner = self.inner.exclusive_access();
     let task_id = inner.current_task;
-    let current_taskb = &mut inner.tasks[task_id];
-    let memory_set = &mut current_taskb.memory_set;
+    let current_task = &mut inner.tasks[task_id];
+    let memory_set = &mut current_task.memory_set;
 
     let v1 = VirtPageNum::from(VirtAddr(start));
     let v2 = VirtPageNum::from(VirtAddr(start + len).ceil());
 
-    for x in v1.0 .. v2.0 {
-        if let Some(pte) = memory_set.translate(VirtPageNum(x)) {
-            if !pte.is_valid() {
+    for vpn in v1.0 .. v2.0 {
+        if let Some(m) = memory_set.translate(VirtPageNum(vpn)) {
+            if !m.is_valid() {
                 return -1;
             }
         }
     }
-
+    
     let bound = VPNRange::new(v1, v2);
     memory_set.munmap(bound);
     0
