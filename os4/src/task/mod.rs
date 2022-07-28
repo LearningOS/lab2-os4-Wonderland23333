@@ -178,9 +178,15 @@ fn update_syscall_time(&self, syscall_id: usize) {
 
 fn call_map(&self, start: usize, len: usize, port: usize) -> isize {
     if start & (PAGE_SIZE - 1) != 0 {
+        println!(
+            "expect the start address to be aligned with a page, but get an invalid start: {:#x}",
+            start
+        );
         return -1;
     }
-    if port <= 0 || port > 7usize   {
+
+    if port == 0 || port > 7usize  {
+        println!("invalid port: {:#b}", port);
         return -1;
     }
 
@@ -192,9 +198,10 @@ fn call_map(&self, start: usize, len: usize, port: usize) -> isize {
     let v1 = VirtPageNum::from(VirtAddr(start));
     let v2 = VirtPageNum::from(VirtAddr(start + len).ceil());
 
-    for i in v1.0 ..v2.0 {
-        if let Some(m) = memory_set.translate(VirtPageNum(i)) {
-            if m.is_valid() {
+    for vpn in  v1.0 .. v2.0 {
+        if let Some(pte) = memory_set.translate(VirtPageNum(vpn)) {
+            if pte.is_valid() {
+                println!("vpn {} has been occupied!", vpn);
                 return -1;
             }
         }
@@ -202,6 +209,7 @@ fn call_map(&self, start: usize, len: usize, port: usize) -> isize {
 
     let permission = MapPermission::from_bits((port as u8) << 1).unwrap() | MapPermission::U;
     memory_set.insert_framed_area(VirtAddr(start), VirtAddr(start+len), permission);
+
     0
 }
          
